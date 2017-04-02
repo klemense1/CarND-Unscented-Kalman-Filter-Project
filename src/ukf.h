@@ -62,6 +62,9 @@ public:
   ///* State dimension
   int n_x_;
 
+  ///* State dimension radar measurement space
+  int n_z_;
+
   ///* Augmented state dimension
   int n_aug_;
 
