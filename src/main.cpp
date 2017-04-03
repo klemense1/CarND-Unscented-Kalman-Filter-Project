@@ -66,6 +66,9 @@ int main(int argc, char* argv[]) {
    *  Set Measurements                          *
    **********************************************/
 
+  // Create a UKF instance
+  UKF ukf;
+
   vector<MeasurementPackage> measurement_pack_list;
   vector<GroundTruthPackage> gt_pack_list;
 
@@ -83,7 +86,7 @@ int main(int argc, char* argv[]) {
     // reads first element from the current line
     iss >> sensor_type;
 
-    if (sensor_type.compare("L") == 0) {
+    if (sensor_type.compare("L") == 0 && ukf.use_laser_) {
       // laser measurement
 
       // read measurements at this timestamp
@@ -97,6 +100,20 @@ int main(int argc, char* argv[]) {
       iss >> timestamp;
       meas_package.timestamp_ = timestamp;
       measurement_pack_list.push_back(meas_package);
+
+      // read ground truth data to compare later
+      float x_gt;
+      float y_gt;
+      float vx_gt;
+      float vy_gt;
+      iss >> x_gt;
+      iss >> y_gt;
+      iss >> vx_gt;
+      iss >> vy_gt;
+      gt_package.gt_values_ = VectorXd(4);
+      gt_package.gt_values_ << x_gt, y_gt, vx_gt, vy_gt;
+      gt_pack_list.push_back(gt_package);
+
     } else if (sensor_type.compare("R") == 0) {
       // radar measurement
 
@@ -113,7 +130,6 @@ int main(int argc, char* argv[]) {
       iss >> timestamp;
       meas_package.timestamp_ = timestamp;
       measurement_pack_list.push_back(meas_package);
-    }
 
       // read ground truth data to compare later
       float x_gt;
@@ -127,10 +143,10 @@ int main(int argc, char* argv[]) {
       gt_package.gt_values_ = VectorXd(4);
       gt_package.gt_values_ << x_gt, y_gt, vx_gt, vy_gt;
       gt_pack_list.push_back(gt_package);
-  }
 
-  // Create a UKF instance
-  UKF ukf;
+    }
+
+  }
 
   // used to compute the RMSE later
   vector<VectorXd> estimations;
