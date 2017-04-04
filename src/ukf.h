@@ -63,7 +63,10 @@ public:
   int n_x_;
 
   ///* State dimension radar measurement space
-  int n_z_;
+  int n_z_radar_;
+
+  ///* State dimension lidar measurement space
+  int n_z_lidar_;
 
   ///* Augmented state dimension
   int n_aug_;
