@@ -8,6 +8,8 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using std::vector;
 
+//#define PRINT_DEBUG
+
 /**
  * Initializes Unscented Kalman filter
  */
@@ -37,10 +39,10 @@ UKF::UKF() {
     Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
 
     // Process noise standard deviation longitudinal acceleration in m/s^2
-    std_a_ = 1;
+    std_a_ = 2;
 
     // Process noise standard deviation yaw acceleration in rad/s^2
-    std_yawdd_ = 0.03;
+    std_yawdd_ = 0.1;
 
     // Laser measurement noise standard deviation position1 in m
     std_laspx_ = 0.15;
@@ -121,19 +123,26 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     *  PREDICTION & UPDATE
     ****************************************************************************/
 
+
     float dt = (meas_package.timestamp_ - time_us_) / 1000000.0;    //dt - expressed in seconds
+
+    time_us_ = meas_package.timestamp_;
+
+    while (dt > 0.1)
+    {
+        const double delta_t = 0.05;
+        Prediction(delta_t);
+        dt -= delta_t;
+    }
+
+    Prediction(dt);
 
     if (meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_) {
 
-        time_us_ = meas_package.timestamp_;
-
-        Prediction(dt);
         UpdateRadar(meas_package);
+
     } else if (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_) {
 
-        time_us_ = meas_package.timestamp_;
-
-        Prediction(dt);
         UpdateLidar(meas_package);
     }
 
@@ -185,8 +194,10 @@ void UKF::Prediction(double delta_t) {
         Xsig_aug.col(i + 1 + n_aug_) = x_aug - sqrt(lambda + n_aug_) * L.col(i);
     }
 
+#ifdef PRINT_DEBUG
     //print result
     std::cout << "Xsig_aug = " << std::endl << Xsig_aug << std::endl;
+#endif
 
     //predict sigma points
     for (int i = 0; i < 2 * n_aug_ + 1; i++) {
@@ -231,8 +242,10 @@ void UKF::Prediction(double delta_t) {
         Xsig_pred_(4, i) = yawd_p;
     }
 
+#ifdef PRINT_DEBUG
     //print result
     std::cout << "Xsig_pred = " << std::endl << Xsig_pred_ << std::endl;
+#endif PRINT_DEBUG
 
     // set weights
     double weight_0 = lambda / (lambda + n_aug_);
@@ -261,9 +274,11 @@ void UKF::Prediction(double delta_t) {
         P_ = P_ + weights_(i) * x_diff * x_diff.transpose();
     }
 
+#ifdef PRINT_DEBUG
     //print result
     std::cout << "Predicted state" << std::endl << x_ << std::endl;
     std::cout << "Predicted covariance matrix" << std::endl << P_ << std::endl;
+#endif PRINT_DEBUG
 
 }
 
@@ -328,9 +343,11 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
             0, std_laspy_ * std_laspy_;
     S = S + R;
 
+#ifdef PRINT_DEBUG
     //print result
     std::cout << "z_pred: " << std::endl << z_pred << std::endl;
     std::cout << "S: " << std::endl << S << std::endl;
+#endif PRINT_DEBUG
 
     //create matrix for cross correlation Tc
     MatrixXd Tc = MatrixXd(n_x_, n_z_lidar_);
@@ -442,9 +459,11 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
             0, 0, std_radrd_ * std_radrd_;
     S = S + R;
 
+#ifdef PRINT_DEBUG
     //print result
     std::cout << "z_pred: " << std::endl << z_pred << std::endl;
     std::cout << "S: " << std::endl << S << std::endl;
+#endif PRINT_DEBUG
 
     //create matrix for cross correlation Tc
     MatrixXd Tc = MatrixXd(n_x_, n_z_radar_);
