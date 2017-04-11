@@ -16,7 +16,6 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
       * Calculate the RMSE here.
     */
     VectorXd rmse(4);
-    vector<VectorXd> estm_converted;
     rmse << 0, 0, 0, 0;
 
     if(estimations.size() != ground_truth.size()
@@ -25,21 +24,11 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
         return rmse;
     }
 
-    // convert state vector to px, py, vx, vy
-    for (unsigned int i = 0; i < estimations.size(); ++i) {
-
-        VectorXd converted(4);
-        converted << estimations[i][0],                        // px
-                estimations[i][1],                             // py
-                cos(estimations[i][3]) * estimations[i][2],    // vx
-                sin(estimations[i][3]) * estimations[i][2];    // vy
-        estm_converted.push_back(converted);
-    }
 
     //accumulate squared residuals errors
-    for (unsigned int i = 0; i < estm_converted.size(); ++i) {
+    for (unsigned int i = 0; i < estimations.size(); ++i) {
 
-        VectorXd residual = estm_converted[i] - ground_truth[i];
+        VectorXd residual = estimations[i] - ground_truth[i];
 
         //coefficient-wise multiplication
         residual = residual.array() * residual.array();
@@ -47,11 +36,17 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
     }
 
     //calculate the mean from the rolling sum
-    rmse /= estm_converted.size();
+    rmse /= estimations.size();
 
     //calculate the squared root from the mean
     rmse = rmse.array().sqrt();
 
     //return the RMSE for this estimation.
     return rmse;
+}
+
+// TODO: try fmod instead of while lopp
+void Tools::normalize_angle(double &angle) {
+    while (angle > M_PI) angle -= 2. * M_PI;
+    while (angle < -M_PI) angle += 2. * M_PI;
 }
